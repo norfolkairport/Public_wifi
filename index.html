@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <title>Norfolk International Airport – Free Wi-Fi</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet"/>
   <style>
@@ -25,6 +25,8 @@
       margin: 0; padding: 0;
       min-height: 100vh;
       font-family: 'Open Sans', sans-serif;
+      /* Prevent iOS rubber-band scroll fighting captive portal */
+      -webkit-overflow-scrolling: touch;
     }
 
     body {
@@ -116,13 +118,11 @@
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* Card top accent bar */
     .card-accent {
       height: 5px;
       background: linear-gradient(90deg, var(--blue-dark) 0%, var(--blue-mid) 50%, var(--blue-light) 100%);
     }
 
-    /* Card body */
     .card-body {
       background: var(--gray-bg);
       padding: 30px 32px 12px;
@@ -149,7 +149,6 @@
       margin: 0 auto 22px;
     }
 
-    /* Wi-Fi icon */
     .wifi-icon {
       margin: 0 auto 22px;
       width: 54px; height: 54px;
@@ -160,14 +159,13 @@
     }
     .wifi-icon svg { width: 32px; height: 32px; }
 
-    /* Divider */
     .card-divider {
       height: 1px;
       background: var(--gray-border);
       margin: 0 32px;
     }
 
-    /* Checkboxes */
+    /* ── Checkboxes ── */
     .card-form {
       background: var(--white);
       margin: 16px 28px 0;
@@ -185,21 +183,31 @@
       border-bottom: 1px solid var(--gray-border);
       text-align: left;
       transition: background 0.15s;
+      /* FIX: ensure touch tap registers on the whole row */
+      -webkit-tap-highlight-color: rgba(0, 87, 184, 0.06);
+      cursor: pointer;
     }
     .check-row:last-child { border-bottom: none; }
     .check-row:hover { background: #f8faff; }
+    /* FIX: Android touch active state */
+    .check-row:active { background: #eef4ff; }
 
     .check-row input[type="checkbox"] {
       flex-shrink: 0;
       margin-top: 2px;
-      width: 17px; height: 17px;
+      width: 20px; height: 20px;   /* slightly larger hit area on mobile */
       accent-color: var(--blue-mid);
       cursor: pointer;
+      /* FIX: prevent double-tap zoom on checkbox */
+      touch-action: manipulation;
     }
 
     .check-row label {
       font-size: 13px; color: var(--text);
       cursor: pointer; line-height: 1.55;
+      /* FIX: prevent text selection on tap */
+      -webkit-user-select: none;
+      user-select: none;
     }
     .check-row label strong { color: var(--blue-dark); }
     .check-row label .aup-trigger {
@@ -212,7 +220,7 @@
     }
     .check-row label .aup-trigger:hover { color: var(--blue-dark); }
 
-    /* Connect button */
+    /* ── Connect button ── */
     .card-actions {
       padding: 20px 28px 22px;
       background: var(--gray-bg);
@@ -232,24 +240,93 @@
       text-transform: uppercase;
       transition: all 0.2s;
       box-shadow: 0 5px 18px rgba(78,154,46,0.4);
+
+      /* FIX 1: Remove default grey Android tap flash */
+      -webkit-tap-highlight-color: transparent;
+      /* FIX 2: Prevent double-tap zoom delay on Android */
+      touch-action: manipulation;
+      /* FIX 3: Hardware-accelerate the button for smooth transforms */
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
+      /* FIX 4: Prevent text selection on button tap */
+      -webkit-user-select: none;
+      user-select: none;
     }
-    .btn-connect:hover:not(:disabled) {
+
+    /* FIX: :hover doesn't fire reliably on Android touch —
+       use :active for the pressed feedback instead */
+    .btn-connect:hover:not(:disabled),
+    .btn-connect:focus-visible:not(:disabled) {
       background: linear-gradient(135deg, var(--green-hover) 0%, #4e9a2e 100%);
       transform: translateY(-2px);
       box-shadow: 0 8px 24px rgba(78,154,46,0.45);
     }
-    .btn-connect:active:not(:disabled) { transform: translateY(0); }
+
+    /* FIX: This is what Android Chrome actually fires on tap */
+    .btn-connect:active:not(:disabled) {
+      background: linear-gradient(135deg, var(--green-hover) 0%, #4e9a2e 100%);
+      transform: translateY(1px) scale(0.98);
+      box-shadow: 0 2px 8px rgba(78,154,46,0.35);
+    }
+
     .btn-connect:disabled {
       background: linear-gradient(135deg, #b0bec5, #cfd8dc);
       box-shadow: none; cursor: not-allowed; transform: none;
+      opacity: 0.72;
+    }
+
+    /* FIX: Enabled-but-not-yet-pressed state — make it visually inviting */
+    .btn-connect:not(:disabled) {
+      animation: pulse-glow 2.4s ease-in-out infinite;
+    }
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 5px 18px rgba(78,154,46,0.4); }
+      50%       { box-shadow: 0 5px 28px rgba(78,154,46,0.65), 0 0 0 4px rgba(78,154,46,0.12); }
+    }
+    /* Stop pulsing while connecting */
+    .btn-connect.connecting {
+      animation: none;
     }
 
     .aup-bottom-link {
       display: inline-block; margin-top: 11px;
       font-size: 11.5px; color: var(--blue-mid);
       text-decoration: none; letter-spacing: 0.2px;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
     .aup-bottom-link:hover { text-decoration: underline; }
+
+    /* ── Status message (replaces "three dots" workaround) ── */
+    .status-msg {
+      display: none;
+      margin-top: 12px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      text-align: center;
+    }
+    .status-msg.success {
+      display: block;
+      background: #e8f5e9;
+      color: #2e7d32;
+      border: 1px solid #a5d6a7;
+    }
+    .status-msg.error {
+      display: block;
+      background: #fff3e0;
+      color: #e65100;
+      border: 1px solid #ffcc80;
+    }
+    .status-msg.info {
+      display: block;
+      background: #e3f2fd;
+      color: var(--blue-dark);
+      border: 1px solid #90caf9;
+    }
 
     /* ══════════════════════════════
        AUP MODAL
@@ -263,6 +340,7 @@
       justify-content: center;
       padding: 20px;
       backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
     }
     .modal-overlay.open { display: flex; }
 
@@ -296,14 +374,17 @@
     .modal-close {
       background: rgba(255,255,255,0.18);
       border: none; color: var(--white);
-      width: 30px; height: 30px;
+      width: 36px; height: 36px;   /* bigger tap target */
       border-radius: 50%; cursor: pointer;
       font-size: 16px; font-weight: 700;
       display: flex; align-items: center; justify-content: center;
       transition: background 0.15s;
       flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
-    .modal-close:hover { background: rgba(255,255,255,0.32); }
+    .modal-close:hover  { background: rgba(255,255,255,0.32); }
+    .modal-close:active { background: rgba(255,255,255,0.45); }
 
     .modal-body {
       overflow-y: auto;
@@ -312,6 +393,7 @@
       line-height: 1.7;
       color: var(--text);
       font-size: 13px;
+      -webkit-overflow-scrolling: touch;
     }
 
     .modal-body h4 {
@@ -338,7 +420,7 @@
       flex-shrink: 0;
     }
     .modal-footer button {
-      padding: 10px 36px;
+      padding: 12px 36px;
       background: var(--blue-mid);
       color: var(--white);
       font-family: 'Montserrat', sans-serif;
@@ -346,10 +428,12 @@
       border: none; border-radius: 7px;
       cursor: pointer; letter-spacing: 0.5px;
       transition: background 0.2s;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
-    .modal-footer button:hover { background: var(--blue-dark); }
+    .modal-footer button:hover  { background: var(--blue-dark); }
+    .modal-footer button:active { background: var(--blue-dark); transform: scale(0.98); }
 
-    /* Scrollbar styling */
     .modal-body::-webkit-scrollbar { width: 6px; }
     .modal-body::-webkit-scrollbar-track { background: var(--gray-bg); }
     .modal-body::-webkit-scrollbar-thumb { background: var(--gray-border); border-radius: 3px; }
@@ -359,7 +443,6 @@
       .logo-bar img { max-height: 50px; }
       .page-bg { padding: 24px 14px; }
       .card-body { padding: 22px 20px 10px; }
-      .card-body h1 { font-size: 19px; }
       .card-form { margin: 14px 16px 0; }
       .card-actions { padding: 16px 16px 18px; }
       .modal-body { padding: 16px 18px; }
@@ -404,23 +487,26 @@
       </div>
 
       <div class="card-form">
-        <div class="check-row">
-          <input type="checkbox" id="chk1" onchange="updateBtn()"/>
-          <label for="chk1">
+        <div class="check-row" onclick="toggleCheck('chk1')">
+          <input type="checkbox" id="chk1" onchange="updateBtn()" onclick="event.stopPropagation()"/>
+          <label for="chk1" onclick="event.preventDefault()">
             <strong>Connect to FlyORFwifi</strong> on your device and enjoy unlimited browsing before your flight.
           </label>
         </div>
-        <div class="check-row">
-          <input type="checkbox" id="chk2" onchange="updateBtn()"/>
-          <label for="chk2">
+        <div class="check-row" onclick="toggleCheck('chk2')">
+          <input type="checkbox" id="chk2" onchange="updateBtn()" onclick="event.stopPropagation()"/>
+          <label for="chk2" onclick="event.preventDefault()">
             I Agree with the Wi-Fi System
-            <a class="aup-trigger" onclick="openModal(); return false;">User Agreement and Acceptable Use Policy</a>
+            <a class="aup-trigger" onclick="openModal(); event.stopPropagation(); return false;">User Agreement and Acceptable Use Policy</a>
           </label>
         </div>
       </div>
 
       <div class="card-actions">
-        <button class="btn-connect" id="connectBtn" disabled onclick="handleConnect()">Connect</button>
+        <button class="btn-connect" id="connectBtn" disabled onclick="handleConnect()">
+          Connect
+        </button>
+        <div class="status-msg" id="statusMsg"></div>
         <a class="aup-bottom-link" onclick="openModal(); return false;" href="#">Acceptable Use Policy</a>
       </div>
 
@@ -435,7 +521,6 @@
         <button class="modal-close" onclick="closeModal()">✕</button>
       </div>
       <div class="modal-body">
-
         <h4>1. Purpose and Scope</h4>
         <p>This free public internet Wi-Fi network ("Network") is provided by the Norfolk Airport Authority as a courtesy service to travelers, visitors, and other authorized individuals. By accessing the Network, you agree to comply with the terms of this Acceptable Use Policy. Access to this service is a privilege and not a right. Therefore, the service may be blocked, suspended, or terminated at any time for any reason including, but not limited to, violation of this agreement, actions that may lead to liability for the Norfolk Airport Authority or its owners, disruption of access to other Users or Networks, and violation of applicable laws or regulations.</p>
 
@@ -459,7 +544,6 @@
 
         <h4>8. Acknowledgment</h4>
         <p>Your electronic acceptance of this Agreement by clicking 'I Agree with the Wi-Fi System User Agreement and Acceptable Use Policy' has the same effect as if you had signed this Agreement. The effective date of this Agreement is the date that you click on 'I Agree...'.</p>
-
       </div>
       <div class="modal-footer">
         <button onclick="closeModal()">Close</button>
@@ -468,23 +552,134 @@
   </div>
 
 <script>
+  /* ── Checkbox toggle helper ──────────────────────────────────────────────
+     Android Chrome fires touch events on the row div but sometimes misses
+     the checkbox element itself. Toggling via JS ensures reliable state.    */
+  function toggleCheck(id) {
+    var cb = document.getElementById(id);
+    cb.checked = !cb.checked;
+    updateBtn();
+  }
+
   function updateBtn() {
     var c1 = document.getElementById('chk1').checked;
     var c2 = document.getElementById('chk2').checked;
-    document.getElementById('connectBtn').disabled = !(c1 && c2);
+    var btn = document.getElementById('connectBtn');
+    btn.disabled = !(c1 && c2);
+  }
+
+  /* ── Connect handler ─────────────────────────────────────────────────────
+     HOW CAPTIVE PORTAL AUTH WORKS on Android / iOS:
+       The OS opens the splash page inside a restricted WebView
+       (CaptivePortalLoginActivity on Android, NetworkExtension on iOS).
+       To signal "user authenticated", the captive portal server must respond
+       with HTTP 204 to the probe URL (connectivitycheck.gstatic.com, etc.).
+       That happens on your CONTROLLER (Cisco WLC / Meraki / FortiGate) side,
+       NOT in the browser JS.
+
+     WHAT THIS PAGE SHOULD DO:
+       1. POST acceptance to your controller's auth endpoint.
+       2. The controller marks the MAC as authenticated and returns 302/204.
+       3. The OS WebView detects the 204 response and dismisses the portal.
+
+     CONTROLLER REDIRECT URL:
+       When the controller redirects the user to this splash page it appends
+       query parameters. Common ones:
+         Cisco WLC:   ?redirect=<url>&ap_mac=<mac>&client_mac=<mac>
+         Meraki:      ?continue_url=<url>&client_ip=<ip>&node_id=<id>
+         FortiGate:   ?magic=<token>&userip=<ip>&usermac=<mac>
+         Ruckus:      ?sip=<ip>&client_mac=<mac>&uip=<ip>
+
+     UPDATE the CONTROLLER_AUTH_ENDPOINT below to match YOUR controller.     */
+
+  var CONTROLLER_AUTH_ENDPOINT = (function() {
+    /* Auto-detect from common query param patterns */
+    var p = new URLSearchParams(window.location.search);
+
+    /* Meraki / generic */
+    if (p.get('continue_url'))  return p.get('continue_url');
+    /* Cisco WLC */
+    if (p.get('redirect'))      return p.get('redirect');
+    /* FortiGate */
+    if (p.get('magic'))         return 'https://' + window.location.hostname + '/fgtauth?' + p.toString();
+
+    /* Fallback — replace with your controller's auth URL */
+    return 'http://1.1.1.1/login';   /* <-- UPDATE THIS */
+  })();
+
+  function showStatus(type, msg) {
+    var el = document.getElementById('statusMsg');
+    el.className = 'status-msg ' + type;
+    el.textContent = msg;
   }
 
   function handleConnect() {
     var btn = document.getElementById('connectBtn');
+    btn.classList.add('connecting');
     btn.textContent = 'Connecting…';
     btn.disabled = true;
-    var params = new URLSearchParams(window.location.search);
-    var continueUrl = params.get('continue_url') || 'https://www.google.com';
-    setTimeout(function() {
-      window.location.href = continueUrl;
-    }, 1500);
-  } this is part of the splash page, instead of redirecting can you change the code to directly connect when click on connect button
+    showStatus('info', 'Authorising your device — please wait…');
 
+    /* ── Strategy 1: POST to controller auth endpoint ──────────────────
+       Most enterprise captive portal controllers (Cisco, Meraki, Ruckus,
+       Aruba, FortiGate) accept a POST or GET to their auth URL to grant
+       access. The controller handles the 204 response to the OS probe.    */
+    fetch(CONTROLLER_AUTH_ENDPOINT, {
+      method: 'POST',
+      mode: 'no-cors',     /* captive portal endpoints don't send CORS headers */
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        buttonClicked: '4',
+        redirect_url:  CONTROLLER_AUTH_ENDPOINT,
+        err_flag:      '0'
+      })
+    })
+    .then(function() {
+      onAuthSuccess();
+    })
+    .catch(function() {
+      /* Strategy 2: If POST fails, try a plain GET (Meraki / open-auth) */
+      return fetch(CONTROLLER_AUTH_ENDPOINT, { method: 'GET', mode: 'no-cors' });
+    })
+    .then(function() {
+      onAuthSuccess();
+    })
+    .catch(function(err) {
+      /* Strategy 3: Direct location change as last resort */
+      onAuthFallback();
+    });
+  }
+
+  function onAuthSuccess() {
+    var btn = document.getElementById('connectBtn');
+    btn.textContent = '✓ Connected!';
+    btn.style.background = 'linear-gradient(135deg, #1565c0 0%, #1976d2 100%)';
+    showStatus('success', 'You\'re connected! Enjoy free Wi-Fi at ORF.');
+
+    /* Give the OS WebView ~1.5s to re-probe and auto-dismiss the portal */
+    setTimeout(function() {
+      /* Try to close the captive portal WebView on Android */
+      try { window.close(); } catch(e) {}
+      /* iOS / fallback — navigate to a neutral URL so the OS re-probes */
+      window.location.replace('http://captive.apple.com/hotspot-detect.html');
+    }, 1500);
+  }
+
+  function onAuthFallback() {
+    /* Controller didn't respond — guide user through manual steps */
+    var btn = document.getElementById('connectBtn');
+    btn.textContent = 'Connected — Tap to Continue';
+    btn.disabled = false;
+    btn.classList.remove('connecting');
+    btn.style.background = 'linear-gradient(135deg, #1565c0 0%, #1976d2 100%)';
+    btn.onclick = function() {
+      window.location.replace(CONTROLLER_AUTH_ENDPOINT);
+    };
+    showStatus('info',
+      'Tap "Connected – Tap to Continue" or open any website in your browser to finish connecting.');
+  }
+
+  /* ── Modal ─────────────────────────────────────────────────────────────── */
   function openModal() {
     document.getElementById('aupModal').classList.add('open');
     document.body.style.overflow = 'hidden';
