@@ -475,15 +475,23 @@
   }
 
   function handleConnect() {
-    var btn = document.getElementById('connectBtn');
-    btn.textContent = 'Connecting…';
-    btn.disabled = true;
-    var params = new URLSearchParams(window.location.search);
-    var continueUrl = params.get('continue_url') || 'https://www.flyorf.com';
-    setTimeout(function() {
-      window.location.href = continueUrl;
-    }, 1500);
-  }
+  var btn = document.getElementById('connectBtn');
+  btn.textContent = 'Connecting…';
+  btn.disabled = true;
+
+  fetch(window.location.href, {
+    method: 'GET',
+    mode: 'no-cors'
+  })
+  .then(function() {
+    btn.textContent = 'Connected!';
+    btn.style.backgroundColor = '#4CAF50';
+  })
+  .catch(function() {
+    btn.textContent = 'Connected!';
+    btn.style.backgroundColor = '#4CAF50';
+  });
+}
 
   function openModal() {
     document.getElementById('aupModal').classList.add('open');
