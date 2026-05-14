@@ -480,20 +480,22 @@
   btn.disabled = true;
 
   var params = new URLSearchParams(window.location.search);
-  var continueUrl = params.get('continue_url');
 
-  if (continueUrl) {
-    // Redirect to Meraki's continue_url — this is what authorizes the client
+  // Meraki passes base_grant_url — this is the actual auth endpoint
+  var baseGrantUrl = params.get('base_grant_url');
+  var userContinueUrl = params.get('user_continue_url') || 'https://www.flyorf.com';
+
+  if (baseGrantUrl) {
+    // Redirect to Meraki's grant URL to authorize the client
     setTimeout(function() {
-      window.location.href = decodeURIComponent(continueUrl);
+      window.location.href = decodeURIComponent(baseGrantUrl) 
+        + '?continue_url=' + encodeURIComponent(decodeURIComponent(userContinueUrl));
     }, 1000);
   } else {
-    // No continue_url = not behind Meraki portal (dev/preview mode)
     btn.textContent = 'Connected!';
     btn.style.background = 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)';
   }
 }
-
   function openModal() {
     document.getElementById('aupModal').classList.add('open');
     document.body.style.overflow = 'hidden';
