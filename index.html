@@ -202,15 +202,31 @@
       cursor: pointer; line-height: 1.55;
     }
     .check-row label strong { color: var(--blue-dark); }
-    .check-row label .aup-trigger {
+
+    .aup-trigger {
       color: var(--blue-mid);
+      font: inherit;
       font-style: italic;
       text-decoration: none;
+      border: none;
       border-bottom: 1px dashed var(--blue-light);
+      background: transparent;
+      padding: 0;
       cursor: pointer;
       transition: color 0.15s;
     }
-    .check-row label .aup-trigger:hover { color: var(--blue-dark); }
+
+    .aup-trigger:hover {
+      color: var(--blue-dark);
+    }
+
+    .aup-trigger:focus-visible,
+    .aup-bottom-link:focus-visible,
+    .modal-close:focus-visible,
+    .modal-footer button:focus-visible {
+      outline: 3px solid var(--blue-light);
+      outline-offset: 3px;
+    }
 
     /* Connect button */
     .card-actions {
@@ -410,30 +426,61 @@
             <strong>Connect to FlyORFwifi</strong> on your device and enjoy unlimited browsing before your flight.
           </label>
         </div>
+
         <div class="check-row">
           <input type="checkbox" id="chk2" onchange="updateBtn()"/>
-          <label for="chk2">
-            I Agree with the Wi-Fi System
-            <a class="aup-trigger" onclick="openModal(); return false;">User Agreement and Acceptable Use Policy</a>
-          </label>
+          <div>
+            <label for="chk2">
+              I Agree with the Wi-Fi System
+            </label>
+            <button
+              type="button"
+              class="aup-trigger"
+              onclick="openModal(this)"
+            >
+              User Agreement and Acceptable Use Policy
+            </button>
+          </div>
         </div>
       </div>
 
       <div class="card-actions">
         <button class="btn-connect" id="connectBtn" disabled onclick="handleConnect()">Connect</button>
-        <a class="aup-bottom-link" onclick="openModal(); return false;" href="#">Acceptable Use Policy</a>
+        <a
+          class="aup-bottom-link"
+          onclick="openModal(this); return false;"
+          href="#aupModal"
+        >
+          Acceptable Use Policy
+        </a>
       </div>
 
     </div>
   </div>
 
   <!-- ══ AUP MODAL ══ -->
-  <div class="modal-overlay" id="aupModal" onclick="closeModalOutside(event)">
+  <div
+    class="modal-overlay"
+    id="aupModal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="aupModalTitle"
+    aria-hidden="true"
+    onclick="closeModalOutside(event)"
+  >
     <div class="modal">
       <div class="modal-header">
-        <h3>Composite Airport Guest Wi-Fi Acceptable Use Policy</h3>
-        <button class="modal-close" onclick="closeModal()">✕</button>
+        <h3 id="aupModalTitle">Composite Airport Guest Wi-Fi Acceptable Use Policy</h3>
+        <button
+          type="button"
+          class="modal-close"
+          aria-label="Close Acceptable Use Policy"
+          onclick="closeModal()"
+        >
+          ✕
+        </button>
       </div>
+
       <div class="modal-body">
 
         <h4>1. Purpose and Scope</h4>
@@ -461,8 +508,9 @@
         <p>Your electronic acceptance of this Agreement by clicking 'I Agree with the Wi-Fi System User Agreement and Acceptable Use Policy' has the same effect as if you had signed this Agreement. The effective date of this Agreement is the date that you click on 'I Agree...'.</p>
 
       </div>
+
       <div class="modal-footer">
-        <button onclick="closeModal()">Close</button>
+        <button type="button" onclick="closeModal()">Close</button>
       </div>
     </div>
   </div>
@@ -488,7 +536,7 @@
   if (baseGrantUrl) {
     // Redirect to Meraki's grant URL to authorize the client
     setTimeout(function() {
-      window.location.href = decodeURIComponent(baseGrantUrl) 
+      window.location.href = decodeURIComponent(baseGrantUrl)
         + '?continue_url=' + encodeURIComponent(decodeURIComponent(userContinueUrl));
     }, 1000);
   } else {
@@ -496,19 +544,77 @@
     btn.style.background = 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)';
   }
 }
-  function openModal() {
-    document.getElementById('aupModal').classList.add('open');
+
+  var lastFocusedElement = null;
+
+  function openModal(triggerElement) {
+    var modal = document.getElementById('aupModal');
+
+    lastFocusedElement = triggerElement || document.activeElement;
+
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
+
+    var closeButton = modal.querySelector('.modal-close');
+
+    if (closeButton) {
+      closeButton.focus();
+    }
   }
 
   function closeModal() {
-    document.getElementById('aupModal').classList.remove('open');
+    var modal = document.getElementById('aupModal');
+
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
+
+    if (lastFocusedElement) {
+      lastFocusedElement.focus();
+    }
   }
 
   function closeModalOutside(e) {
-    if (e.target === document.getElementById('aupModal')) closeModal();
+    if (e.target === document.getElementById('aupModal')) {
+      closeModal();
+    }
   }
+
+  document.addEventListener('keydown', function(e) {
+    var modal = document.getElementById('aupModal');
+
+    if (!modal.classList.contains('open')) {
+      return;
+    }
+
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      closeModal();
+      return;
+    }
+
+    if (e.key === 'Tab') {
+      var focusableElements = modal.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+
+      if (!focusableElements.length) {
+        return;
+      }
+
+      var firstElement = focusableElements[0];
+      var lastElement = focusableElements[focusableElements.length - 1];
+
+      if (e.shiftKey && document.activeElement === firstElement) {
+        e.preventDefault();
+        lastElement.focus();
+      } else if (!e.shiftKey && document.activeElement === lastElement) {
+        e.preventDefault();
+        firstElement.focus();
+      }
+    }
+  });
 </script>
 
 </body>
